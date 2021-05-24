@@ -20,7 +20,11 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE), 1000)
+        // 1.先申请权限
+        ActivityCompat.requestPermissions(this,
+            arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE), 1000)
+        // 2.在需要统计的Activity或者Fragment的周期入口调用init()
         RMS.init(this)
 
         // 记录
@@ -41,11 +45,13 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        // 开始计时
         RMS.page(RMSEnum.START)
     }
 
     override fun onPause() {
         super.onPause()
+        // 结束计时
         RMS.page(RMSEnum.END)
     }
 }

@@ -17,7 +17,7 @@ open class RSApp : Application() {
         val key = "YNlV0JJMaFcj37ivPKBlfR23QZ7AcCibgOADlPBvxMcR-tNG5hs"
         val uid = "16029161077920650326"
         val token = "ssMAAjJdtrES8eZj5CO-giWFBfbFfaC2pYyvjTnLVE03nuwYpX4nw-kRsAYSTxGFnormEErGV8wOJgubJZhJgg_aPgo"
-
+        // 绑定
         RMS.attach(this, src, key, uid, token)
     }
 }

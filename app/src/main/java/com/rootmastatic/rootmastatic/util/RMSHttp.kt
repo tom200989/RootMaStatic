@@ -22,9 +22,8 @@ var RELESE_MAIN_URL = "https://www.tcl-move.com/" // 正式
 var DEBUG_MAIN_URL = "https://api.tcl-move.com/" // 测试
 var SUB_URL = "/ops/v1.2/stat/report" // 副域
 
-// var KEY = "key=YNlV0JJMaFcj37ivPKBlfR23QZ7AcCibgOADlPBvxMcR-tNG5hs;token=ssMAAjJdtrES8eZj5CO-giWFBfbFfaC2pYyvjTnLVE03nuwYpX4nw-kRsAYSTxGFnormEErGV8wOJgubJZhJgg_aPgo;sign=NjIuNTIuNDUuMzEuMTYuMTYuMi4y;timestamp=1621842319;newtoken=Er22l0UkAdVvKWL5cQHg+Is/izN+UMDBpbfhafuHLI4=;"// key
-var KEY = "YNlV0JJMaFcj37ivPKBlfR23QZ7AcCibgOADlPBvxMcR-tNG5hs"// key
 var UID = "16029161077920650326"// UID
+var KEY = "YNlV0JJMaFcj37ivPKBlfR23QZ7AcCibgOADlPBvxMcR-tNG5hs"// key
 var TOKEN = "ssMAAjJdtrES8eZj5CO-giWFBfbFfaC2pYyvjTnLVE03nuwYpX4nw-kRsAYSTxGFnormEErGV8wOJgubJZhJgg_aPgo"// TOKEN
 
 var context_h: Context? = null
