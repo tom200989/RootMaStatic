@@ -13,6 +13,7 @@ import com.tcl.token.ndk.ServerEncrypt
 import org.xutils.common.Callback
 import org.xutils.http.RequestParams
 import org.xutils.x
+import java.net.URL
 
 
 /*
@@ -22,6 +23,8 @@ var RELESE_MAIN_URL = "https://www.tcl-move.com/" // 正式
 var DEBUG_MAIN_URL = "https://api.tcl-move.com/" // 测试
 var SUB_URL = "/ops/v1.2/stat/report" // 副域
 
+var URL: String? = null
+var SEC_URL: String? = null
 var UID = "16029161077920650326"// UID
 var KEY = "YNlV0JJMaFcj37ivPKBlfR23QZ7AcCibgOADlPBvxMcR-tNG5hs"// key
 var TOKEN = "ssMAAjJdtrES8eZj5CO-giWFBfbFfaC2pYyvjTnLVE03nuwYpX4nw-kRsAYSTxGFnormEErGV8wOJgubJZhJgg_aPgo"// TOKEN
@@ -47,8 +50,9 @@ fun toHttp(spFileName: String, reqJson: String) {
 
     if (!DO_REPORT) return
     if (TextUtils.isEmpty(reqJson)) return
-    val sub_new: (String) -> String = { if (it.startsWith("/")) SUB_URL.trimMargin("/") else it }
-    val param = RequestParams(DEBUG_MAIN_URL + sub_new(SUB_URL))
+    val main_new: (String) -> String = { if (it.endsWith("/")) "$it/" else it }
+    val sub_new: (String) -> String = { if (it.startsWith("/")) it.trimMargin("/") else it }
+    val param = RequestParams(main_new(URL ?: DEBUG_MAIN_URL) + sub_new(SEC_URL ?: SUB_URL))
     param.addHeader("Content-Type", "application/json")
     param.addHeader("Accept-Language", "en")
     param.addHeader("Authorization", getAuthoried())
