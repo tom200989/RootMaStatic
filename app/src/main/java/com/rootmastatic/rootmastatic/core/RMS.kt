@@ -61,5 +61,12 @@ open class RMS {
         fun page(rmsEnum: RMSEnum) {
             getRMSCore().page(rmsEnum)
         }
+
+        /**
+         * 上报
+         */
+        fun report() {
+            getRMSCore().report()
+        }
     }
 }

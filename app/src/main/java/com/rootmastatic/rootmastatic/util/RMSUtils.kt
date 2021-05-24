@@ -37,6 +37,8 @@ var PAGE = 0 // 页面类型
 var APP = 1 // 应用类型
 var BTN = 2 // 控件类型
 
+var REPORT_PERIOD = 3 * 1000 // 上报间隔 
+
 /**
  * 打印info
  */
@@ -130,13 +132,15 @@ fun writeStatic(context: Context) {
  * 收集数据(读取需要上报的文件)
  */
 @Synchronized
-fun collectInfo(static_file: File) {
+fun collectInfo(static_file: File): String {
 
     // 容器
     val rmsBtns = ArrayList<RMSBean>() // 容纳控件类型
     val rmsPageApps = ArrayList<RMSBean>() // 容纳时长类型
     // 读取 (注意消除换行)
-    val contents = static_file.readText().replace("\n", "")
+    val readText = static_file.readText()
+    if (TextUtils.isEmpty(readText)) return ""
+    val contents = readText.replace("\n", "")
     // 切割 # 
     val jsons = contents.split(split2)
     // 分类(拆分控件组和页面组)
@@ -202,7 +206,8 @@ fun collectInfo(static_file: File) {
     val param = RMSReqParam()
     param.stat = rmrs
     val reqJson = JSONObject.toJSONString(param)
-    Log.i(TAG, "collectInfo: \n$reqJson")
+    // Log.i(TAG, "collectInfo: \n$reqJson")
+    return reqJson
 }
 
 fun list2Arr(rmsl: ArrayList<RMSBean>): Array<RMSBean> {

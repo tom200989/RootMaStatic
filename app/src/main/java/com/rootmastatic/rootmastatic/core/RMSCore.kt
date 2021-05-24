@@ -5,14 +5,19 @@ import android.app.Activity
 import android.app.Application
 import android.app.Fragment
 import android.content.Context
+import android.os.Build
 import android.text.TextUtils
+import android.util.Log
 import androidx.core.content.pm.PermissionInfoCompat
 import com.alibaba.fastjson.JSONObject
 import com.alibaba.fastjson.util.TypeUtils
 import com.rootmastatic.rootmastatic.*
 import com.rootmastatic.rootmastatic.bean.RMSBean
 import com.rootmastatic.rootmastatic.bean.RMSEnum
-import com.rootmastatic.rootmastatic.util.TimerRunner
+import com.rootmastatic.rootmastatic.util.*
+import org.xutils.common.Callback
+import org.xutils.http.RequestParams
+import org.xutils.x
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
@@ -23,9 +28,6 @@ import kotlin.collections.LinkedHashMap
  * Created by Administrator on 2021/5/18 0018.
  */
 internal class RMSCore {
-
-
-    // companion object {
 
     private var app: Application? = null // 域
     private var dirPath: String? = null // 统计目录(路径)
@@ -39,20 +41,26 @@ internal class RMSCore {
     private var fragment: Fragment? = null // 临时变量
     private var logTimer: TimerRunner? = null// 日志定时器
     private var dikTimer: TimerRunner? = null // 细粒度定时器(用于解决APP强制杀死的情况)
+    private var reportTimer: TimerRunner? = null // 上报定时器
 
     companion object {
         @JvmStatic
         private var dikMap: LinkedHashMap<String, Array<Boolean>> = LinkedHashMap()
     }
 
+
     /**
      * 配置数据源(在application中使用)
      * @param cts Application 域
      * @param src String 数据源
      */
+    @Synchronized
     fun attach(cts: Application, src: String) {
         app = cts
+        context_h = cts
         source = src
+
+
         // 判断是否配置(项目名)数据源(含正则校验)
         isAttach = checkSource(source!!) { putInfo("attach: $it") }
         // 符合条件
@@ -66,6 +74,19 @@ internal class RMSCore {
             /* 目录存在 - 搜索今天的文件是否存在 */
             if (dir.exists() and dir.isDirectory) {
                 putVerbose("attach(): 目录存在")
+
+                /* 
+                * 补偿上报机制
+                * 
+                * <1> 上报时, 记录<文件名, 时间(此处称utime)>到shareperence, 
+                * <2> 获取sp的文件名并到对应的目录查找该文件
+                * <3> 如果找到该文件就读取文件中的最后1个json, 并获取end_time (此处称etime)
+                * <4> 如果etime > utime ,那么就先上报一次, 然后再执行attach的其他操作
+                * <5> attach完毕后, 启动定时器, 1小时上报1次今天的文件, 并记录到shareperence中
+                * 
+                *  */
+                fixReport(dir)
+
                 // 获取今天的时间戳范围
                 val today = getRangeToday()
                 val startToday: Int = today[0]
@@ -117,6 +138,8 @@ internal class RMSCore {
 
             // 启动日志定时器
             startLogTimer()
+            // 启动上报间隔定时器
+            startReportTimer()
 
         } else {// 不符合条件 - 返回
             isPermit = false
@@ -128,6 +151,7 @@ internal class RMSCore {
      * 初始化(Activity)
      * @param ac Activity 域
      */
+    @Synchronized
     fun init(ac: Activity) {
         activity = ac
         // 初始校验
@@ -155,6 +179,7 @@ internal class RMSCore {
      * 初始化(Fragment)
      * @param fr Fragment 域
      */
+    @Synchronized
     fun init(fr: Fragment) {
         fragment = fr
         // 初始校验
@@ -241,7 +266,78 @@ internal class RMSCore {
         }
     }
 
+    /**
+     * 上报
+     */
+    @Synchronized
+    fun report() {
+        // 获取今天上报内容
+        val reqJson = collectInfo(staticFileo!!)
+        // 异步上报
+        toHttp(staticFileo!!.name, reqJson)
+    }
+
+
     /* ------------------------------------------------------------ private---------------------------------------------------------- */
+
+    /**
+     * 补偿上报
+     */
+    private fun fixReport(dir: File) {
+        // 读取到上次缓存的 <文件名,时间>
+        val lastest_update: String? = ShareUtils.getIt(app!!).getString(LASTEST_UPDATE, "default#-1")
+        val infos = lastest_update?.split("#")
+        val last_file_name: String? = infos?.get(0)
+        val last_update_time: Long? = infos?.get(1)?.toLong() // utime
+        if (last_update_time == -1.toLong()) return
+        // 查找对应文件
+        var tempF: File? = null
+        val listFiles = dir.listFiles()
+        if (listFiles!!.isEmpty()) return
+        for (listFile in listFiles) {
+            if (listFile.name == last_file_name) {
+                tempF = listFile
+                break
+            }
+        }
+
+        if (tempF == null) return
+        if (TextUtils.isEmpty(tempF.readText())) return
+
+        // 获取上报内容
+        val reqJson = collectInfo(tempF)
+        // 异步上报
+        toHttp(tempF.name, reqJson)
+        Log.i(TAG, "fixReport: 补偿上报\nfilename: ${tempF.name}\n内容为: \n$reqJson")
+
+        // // 取出最后一行数据 TOAT 暂时不要删除以下代码
+        // if (tempF != null) {
+        //     val readLines = tempF.readLines()
+        //     val last_file_json = readLines[readLines.size - 1].replace("#", "").replace("\n", "")
+        //     val last_file_rms = JSONObject.parseObject(last_file_json, RMSBean::class.java)
+        //     val etime = last_file_rms.end_time
+        //     if (etime > last_update_time!!) {// etime > utime
+        //         // 获取上报内容
+        //         val reqJson = collectInfo(tempF)
+        //         // 异步上报
+        //         toHttp(tempF.name, reqJson)
+        //         Log.i(TAG, "fixReport: 补偿上报\nendtime: $etime\nlast_update_time:$last_update_time\n内容为: \n$reqJson")
+        //     }
+        // }
+    }
+
+    /**
+     * 上报间隔定时器
+     */
+    private fun startReportTimer() {
+        reportTimer?.stop()
+        reportTimer = object : TimerRunner() {
+            override fun doSometing() {
+                report()
+            }
+        }
+        reportTimer?.start(REPORT_PERIOD.toLong(), REPORT_PERIOD.toLong())
+    }
 
     /**
      * 启动细粒度定时器
@@ -506,5 +602,4 @@ internal class RMSCore {
             return false
         }
     }
-    // }
 }
