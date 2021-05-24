@@ -319,26 +319,25 @@ internal class RMSCore {
         if (tempF == null) return
         if (TextUtils.isEmpty(tempF.readText())) return
 
-        // 获取上报内容
-        val reqJson = collectInfo(tempF)
-        // 异步上报
-        toHttp(tempF.name, reqJson)
-        // Log.i(TAG, "fixReport: 补偿上报\nfilename: ${tempF.name}\n内容为: \n$reqJson")
+        // TOAT 暂时不要删除以下代码
+        // // 获取上报内容
+        // val reqJson = collectInfo(tempF)
+        // // 异步上报
+        // toHttp(tempF.name, reqJson)
+        // // Log.i(TAG, "fixReport: 补偿上报\nfilename: ${tempF.name}\n内容为: \n$reqJson")
 
-        // // 取出最后一行数据 TOAT 暂时不要删除以下代码
-        // if (tempF != null) {
-        //     val readLines = tempF.readLines()
-        //     val last_file_json = readLines[readLines.size - 1].replace("#", "").replace("\n", "")
-        //     val last_file_rms = JSONObject.parseObject(last_file_json, RMSBean::class.java)
-        //     val etime = last_file_rms.end_time
-        //     if (etime > last_update_time!!) {// etime > utime
-        //         // 获取上报内容
-        //         val reqJson = collectInfo(tempF)
-        //         // 异步上报
-        //         toHttp(tempF.name, reqJson)
-        //         Log.i(TAG, "fixReport: 补偿上报\nendtime: $etime\nlast_update_time:$last_update_time\n内容为: \n$reqJson")
-        //     }
-        // }
+        // 取出最后一行数据 TOAT 暂时不要删除以下代码
+        val readLines = tempF.readLines()
+        val last_file_json = readLines[readLines.size - 1].replace("#", "").replace("\n", "")
+        val last_file_rms = JSONObject.parseObject(last_file_json, RMSBean::class.java)
+        val etime = last_file_rms.end_time
+        if (System.currentTimeMillis() / 1000 - etime >= REPORT_PERIOD) {// 当前时间距离上次上报超过 peroid 间隔 - 则上报1次
+            // 获取上报内容
+            val reqJson = collectInfo(tempF)
+            // 异步上报
+            toHttp(tempF.name, reqJson)
+            // Log.i(TAG, "fixReport: 补偿上报\nendtime: $etime\nlast_update_time:$last_update_time\n内容为: \n$reqJson")
+        }
     }
 
     /**
