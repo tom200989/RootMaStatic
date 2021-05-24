@@ -53,13 +53,28 @@ internal class RMSCore {
      * 配置数据源(在application中使用)
      * @param cts Application 域
      * @param src String 数据源
+     * @param key String 工程秘钥
+     * @param uid String 项目ID
+     * @param token String 工程令牌
      */
     @Synchronized
-    fun attach(cts: Application, src: String) {
+    fun attach(cts: Application, src: String, key: String, uid: String, token: String) {
+
+        // 初始化网络
+        x.Ext.init(cts)
+        // 检查是否配置了KEY
+        if (TextUtils.isEmpty(src)) throwExcp("请传入正确的数据源")
+        if (TextUtils.isEmpty(key)) throwExcp("请传入正确的key")
+        if (TextUtils.isEmpty(uid)) throwExcp("请传入正确的uid")
+        if (TextUtils.isEmpty(token)) throwExcp("请传入正确的token")
+
+        KEY = key
+        UID = uid
+        TOKEN = token
+
         app = cts
         context_h = cts
         source = src
-
 
         // 判断是否配置(项目名)数据源(含正则校验)
         isAttach = checkSource(source!!) { putInfo("attach: $it") }
@@ -308,7 +323,7 @@ internal class RMSCore {
         val reqJson = collectInfo(tempF)
         // 异步上报
         toHttp(tempF.name, reqJson)
-        Log.i(TAG, "fixReport: 补偿上报\nfilename: ${tempF.name}\n内容为: \n$reqJson")
+        // Log.i(TAG, "fixReport: 补偿上报\nfilename: ${tempF.name}\n内容为: \n$reqJson")
 
         // // 取出最后一行数据 TOAT 暂时不要删除以下代码
         // if (tempF != null) {
@@ -347,7 +362,7 @@ internal class RMSCore {
         dikTimer?.stop()
         dikTimer = object : TimerRunner() {
             override fun doSometing() {// 30秒一到
-                putVerbose("当前计数时间30 sec")
+                putVerbose("当前计数时间 5 sec")
                 // 写出end_time
                 staticList.add(merPageInfo(page!!, PAGE, RMSEnum.END))
             }
@@ -402,6 +417,7 @@ internal class RMSCore {
 
         // 存入
         val rmsBean = RMSBean()
+        rmsBean.id = getUUID()
         rmsBean.source = source!!
         rmsBean.module = module!!
         rmsBean.type = type

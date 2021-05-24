@@ -26,6 +26,12 @@ android {
     }
 }
 
+repositories {
+    flatDir {
+        dirs 'libs'
+    }
+}
+
 dependencies {
     api fileTree(dir: "libs", include: ["*.jar"])
     api "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
@@ -33,6 +39,6 @@ dependencies {
     api 'androidx.appcompat:appcompat:1.2.0'
     api 'org.xutils:xutils:3.9.0'
     api 'com.alibaba:fastjson:1.2.73'
-    implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
-
+    api 'androidx.constraintlayout:constraintlayout:2.0.4'
+    api(name: 'ma_token_v1', ext: 'aar')
 }

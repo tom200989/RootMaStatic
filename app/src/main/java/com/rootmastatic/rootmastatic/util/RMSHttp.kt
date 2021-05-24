@@ -9,20 +9,27 @@ import com.rootmastatic.rootmastatic.TAG
 import com.rootmastatic.rootmastatic.putErr
 import com.rootmastatic.rootmastatic.putInfo
 import com.rootmastatic.rootmastatic.putWarn
+import com.tcl.token.ndk.ServerEncrypt
 import org.xutils.common.Callback
 import org.xutils.http.RequestParams
 import org.xutils.x
-import java.io.File
+
 
 /*
  * Created by Administrator on 2021/5/24.
  */
-var RELESE_MAIN_URL = "https://www.tcl-move.com/v1.2/" // 正式
-var DEBUG_MAIN_URL = "https://api.tcl-move.com/v1.2/" // 测试
+var RELESE_MAIN_URL = "https://www.tcl-move.com/" // 正式
+var DEBUG_MAIN_URL = "https://api.tcl-move.com/" // 测试
 var SUB_URL = "/ops/v1.2/stat/report" // 副域
+
+// var KEY = "key=YNlV0JJMaFcj37ivPKBlfR23QZ7AcCibgOADlPBvxMcR-tNG5hs;token=ssMAAjJdtrES8eZj5CO-giWFBfbFfaC2pYyvjTnLVE03nuwYpX4nw-kRsAYSTxGFnormEErGV8wOJgubJZhJgg_aPgo;sign=NjIuNTIuNDUuMzEuMTYuMTYuMi4y;timestamp=1621842319;newtoken=Er22l0UkAdVvKWL5cQHg+Is/izN+UMDBpbfhafuHLI4=;"// key
+var KEY = "YNlV0JJMaFcj37ivPKBlfR23QZ7AcCibgOADlPBvxMcR-tNG5hs"// key
+var UID = "16029161077920650326"// UID
+var TOKEN = "ssMAAjJdtrES8eZj5CO-giWFBfbFfaC2pYyvjTnLVE03nuwYpX4nw-kRsAYSTxGFnormEErGV8wOJgubJZhJgg_aPgo"// TOKEN
 
 var context_h: Context? = null
 val LASTEST_UPDATE: String = "LASTEST_UPDATE" // 临时存储Key
+var DO_REPORT = true // 允许/不允许发起上报
 
 /**
  * 启动网络上报
@@ -39,14 +46,17 @@ fun toHttp(spFileName: String, reqJson: String) {
     // ShareUtils.getIt(context_h!!).putString(LASTEST_UPDATE, lastest_update)
     // return
 
+    if (!DO_REPORT) return
     if (TextUtils.isEmpty(reqJson)) return
-    val param = RequestParams(DEBUG_MAIN_URL + SUB_URL)
+    val sub_new: (String) -> String = { if (it.startsWith("/")) SUB_URL.trimMargin("/") else it }
+    val param = RequestParams(DEBUG_MAIN_URL + sub_new(SUB_URL))
     param.addHeader("Content-Type", "application/json")
     param.addHeader("Accept-Language", "en")
-    param.addHeader("Authorization", "key=YNlV0JJMaFcj37ivPKBlfR23QZ7AcCibgOADlPBvxMcR-tNG5hs")
+    param.addHeader("Authorization", getAuthoried())
     param.addHeader("User-Agent", Build.MANUFACTURER + "-" + Build.MODEL)
     param.isAsJsonContent = true
     param.bodyContent = reqJson
+    Log.i(TAG, "toHttp: 准备上报\n$reqJson")
     x.http().post(param, object : Callback.CommonCallback<String> {
 
         override fun onSuccess(result: String?) {
@@ -91,6 +101,20 @@ fun doServerResult(spFileName: String, result: String): String {
             else -> return "服务器错误: error code = ${e1.error_id}, error msg = ${e1.error_msg}"
         }
     }
+}
+
+/**
+ * 获取动态秘钥
+ * @return String 动态秘钥
+ */
+fun getAuthoried(): String {
+    val encrypt = ServerEncrypt(UID)
+    val key = "key=$KEY;"
+    val token = "token=$TOKEN;"
+    val sign = "sign=" + encrypt.getSign().toString() + ";"
+    val timeStamp = "timestamp=" + encrypt.getTimestamp().toString() + ";"
+    val newToken = "newtoken=" + encrypt.getNewtoken().toString() + ";"
+    return key + token + sign + timeStamp + newToken
 }
 
 class Errbean1() {

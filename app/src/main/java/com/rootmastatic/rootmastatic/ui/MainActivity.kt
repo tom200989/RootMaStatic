@@ -41,11 +41,11 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        // RMS.page(RMSEnum.START)
+        RMS.page(RMSEnum.START)
     }
 
     override fun onPause() {
         super.onPause()
-        // RMS.page(RMSEnum.END)
+        RMS.page(RMSEnum.END)
     }
 }

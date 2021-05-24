@@ -2,8 +2,6 @@ package com.rootmastatic.rootmastatic
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.app.ActivityManager
-import android.app.Fragment
 import android.content.Context
 import android.content.pm.PackageManager
 import android.text.TextUtils
@@ -19,7 +17,7 @@ import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 
 
-var switch = true // 日志开关
+var SWITCH = true // 日志开关
 var TAG = "ROOT_MA_STATIC" // 日志标记
 var log_dir = "/all_in_one_sc_log" // 日志目录
 var logFileo: File? = null // 日志文件对象
@@ -37,15 +35,15 @@ var PAGE = 0 // 页面类型
 var APP = 1 // 应用类型
 var BTN = 2 // 控件类型
 
-var REPORT_PERIOD = 3 * 1000 // 上报间隔 
+var REPORT_PERIOD = 15 * 1000 // 上报间隔 
 
 /**
  * 打印info
  */
 @Synchronized
 fun putInfo(content: String) {
-    logList.add(content)
-    if (switch) Log.i(TAG, content)
+    if (SWITCH) logList.add(content)
+    if (SWITCH) Log.i(TAG, content)
 }
 
 /**
@@ -53,8 +51,8 @@ fun putInfo(content: String) {
  */
 @Synchronized
 fun putErr(content: String) {
-    logList.add(content)
-    if (switch) Log.e(TAG, content)
+    if (SWITCH) logList.add(content)
+    if (SWITCH) Log.e(TAG, content)
 }
 
 /**
@@ -62,8 +60,8 @@ fun putErr(content: String) {
  */
 @Synchronized
 fun putWarn(content: String) {
-    logList.add(content)
-    if (switch) Log.w(TAG, content)
+    if (SWITCH) logList.add(content)
+    if (SWITCH) Log.w(TAG, content)
 }
 
 /**
@@ -71,8 +69,8 @@ fun putWarn(content: String) {
  */
 @Synchronized
 fun putVerbose(content: String) {
-    logList.add(content)
-    if (switch) Log.v(TAG, content)
+    if (SWITCH) logList.add(content)
+    if (SWITCH) Log.v(TAG, content)
 }
 
 /**
@@ -168,7 +166,7 @@ fun collectInfo(static_file: File): String {
             rmsm.Count = rmsm.Count + 1
         } else {
             // 没有包含 - 首次存入
-            rmsl.id = UUID.randomUUID().toString().replace("-", "")
+            rmsl.id = getUUID()
             rmsl.end_time = rmsl.start_time
             rmsl.Count = 1
             rmsBtnM[rmsl.Value] = rmsl
@@ -181,10 +179,10 @@ fun collectInfo(static_file: File): String {
     val tempM = HashMap<String, List<RMSBean>>()
     for (rmsp in rmsPageApps) {
         val key = rmsp.Value
-        if (tempM.containsKey(key)) {
+        if (tempM.containsKey(key)) {// 存在过
             val curl = tempM[key] as ArrayList<RMSBean>
             curl.add(rmsp)
-        } else {
+        } else {// 首次添加
             val tempL = ArrayList<RMSBean>()
             tempL.add(rmsp)
             tempM[key] = tempL
@@ -265,7 +263,8 @@ fun doMagic(rmsl: List<RMSBean>): RMSBean {
 
     // 新对象
     val rms_new = RMSBean()
-    rms_new.id = UUID.randomUUID().toString().replace("-", "")
+    val idd: (String) -> String = { if (it == "-1") getUUID() else it }
+    rms_new.id = idd(rmsl[0].id)
     rms_new.source = rmsl[0].source
     rms_new.type = rmsl[0].type
     rms_new.duration = total_duration
@@ -280,23 +279,9 @@ fun doMagic(rmsl: List<RMSBean>): RMSBean {
 }
 
 /**
- * 是否处于栈顶
+ * 获取随机数
+ * @return String
  */
-fun isTopAc(cts: Context, ac_name: String): Boolean {
-    val service: ActivityManager = cts.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-    val tasks = service.getRunningTasks(100)
-    for (task in tasks) {
-        if (task.topActivity!!.className.equals(ac_name, ignoreCase = true)) {
-            return true
-        }
-    }
-    return false
+fun getUUID(): String {
+    return UUID.randomUUID().toString().replace("-", "")
 }
-
-/**
- * 是否处于栈顶(Fragment)
- */
-fun isTopFr(fr: Fragment): Boolean {
-    return !fr.isHidden
-}
-
