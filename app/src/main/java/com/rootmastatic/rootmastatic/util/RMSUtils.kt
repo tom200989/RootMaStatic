@@ -35,7 +35,7 @@ var PAGE = 0 // 页面类型
 var APP = 1 // 应用类型
 var BTN = 2 // 控件类型
 
-var REPORT_PERIOD = 15 * 1000 // 上报间隔 
+var REPORT_PERIOD = 30 * 60 * 1000 // 上报间隔 
 
 /**
  * 打印info
